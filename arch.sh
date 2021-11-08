@@ -49,7 +49,7 @@ install_pkgs() {
 	pacman -Sy --noconfirm archlinux-keyring ;
 	pacstrap /mnt base base-devel linux linux-headers linux-firmware xf86-video-nouveau \
         git neovim intel-ucode curl htop neofetch python-pip gawk grub efibootmgr \
-        networkmanager network-manager-applet \dialog wpa_supplicant mtools \
+        networkmanager network-manager-applet dialog wpa_supplicant mtools \
         dosfstools avahi gvfs gvfs-smb nfs-utils inetutils dnsutils bluez \
         bluez-utils alsa-utils pulseaudio bash-completion openssh rsync acpi \
         acpi_call tlp iptables-nft ipset firewalld sof-firmware nss-mdns acpid \
@@ -64,6 +64,8 @@ dwm_install() {
     pacstrap /mnt  xorg-server xorg-xinit xorg-xkill xorg-xsetroot xorg-xbacklight xorg-xprop \
      noto-fonts noto-fonts-emoji noto-fonts-cjk ttf-jetbrains-mono ttf-joypixels ttf-font-awesome \
      sxiv mpv zathura zathura-pdf-mupdf ffmpeg imagemagick  \
+     virt-manager qemu qemu-arch-extra ovmf vde2 materia-gtk-theme \
+     ebtables dnsmasq bridge-utils openbsd-netcat \
      fzf man-db xwallpaper python-pywal youtube-dl unclutter xclip maim \
      zip unzip unrar p7zip xdotool papirus-icon-theme brightnessctl  \
      dosfstools ntfs-3g git sxhkd neovim arc-gtk-theme rsync firefox dash \
@@ -133,12 +135,13 @@ starting-service() {
 
 config-users() {
 	printf "\e[1;32m\n********createing user vijay*********\n\e[0m"
-	useradd -m vijay
+	useradd -G wheel,audio,video -m vijay -p vijay 
 	echo root:vijay | chpasswd
-	echo vijay:vijay | chpasswd
+	# echo vijay:vijay | chpasswd
 	newgrp libvirt
 	usermod -aG libvirt vijay
-	echo "vijay ALL=(ALL) ALL" >> /etc/sudoers.d/vijay
+	# echo "vijay ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers.d/vijay
+    echo "%wheel ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 	printf "\e[1;32m\n********createing user Successfully Done*********\n\e[0m"
 	sed -i 's/^#Para/Para/' /etc/pacman.conf
 	sleep 10
@@ -220,13 +223,20 @@ de_choose() {
 
 postinstall() {
 cat <<EOF > /mnt/home/vijay/temp.sh
+
+git clone --separate-git-dir=/home/vijay/.dotfiles https://github.com/VijayakumarRavi/dotfiles.git tmpdotfiles
+rsync --recursive --verbose --exclude '.git' tmpdotfiles/ /home/vijay/
+rm -rv tmpdotfile/
+alias dots='/usr/bin/git --git-dir=/home/vijay/.dotfiles/ --work-tree=/home/vijay'
+dots config --local status.showUntrackedFiles no
+
+
 echo "CLONING: YAY"
-cd ~
+cd /home/vijay
 git clone "https://aur.archlinux.org/yay.git"
-cd ${HOME}/yay
+cd /home/vijay/yay
 makepkg -si --noconfirm
 
-yay -Sy nerd-fonts-source-code-pro ubuntu-latex-fonts-git --noconfirm
 EOF
 
 chmod +x /mnt/home/vijay/temp.sh
