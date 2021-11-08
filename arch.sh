@@ -223,7 +223,7 @@ de_choose() {
 
 postinstall() {
 cat <<EOF > /mnt/home/vijay/temp.sh
-
+echo "CLONING: Dotfiles"
 git clone --separate-git-dir=/home/vijay/.dotfiles https://github.com/VijayakumarRavi/dotfiles.git tmpdotfiles
 rsync --recursive --verbose --exclude '.git' tmpdotfiles/ /home/vijay/
 rm -rv tmpdotfile/
