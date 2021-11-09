@@ -57,12 +57,12 @@ btrfs_makefs() {
     umount /mnt
     sleep 5
 
-    mount -o noatime,commit=120,compress=zstd,space_cache,subvol=@ /dev/sda3 /mnt
+    mount -o noatime,commit=120,compress=zstd,space_cache,subvol=@ /dev/sda2 /mnt
     # You need to manually create folder to mount the other subvolumes at
     mkdir /mnt/{boot,home,var,.snapshots}
-    mount -o noatime,commit=120,compress=zstd,space_cache,subvol=@home /dev/sda3 /mnt/home
-    mount -o noatime,commit=120,compress=zstd,space_cache,subvol=@.snapshots /dev/sda3 /mnt/.snapshots
-    mount -o subvol=@var /dev/sda3 /mnt/var
+    mount -o noatime,commit=120,compress=zstd,space_cache,subvol=@home /dev/sda2 /mnt/home
+    mount -o noatime,commit=120,compress=zstd,space_cache,subvol=@.snapshots /dev/sda2 /mnt/.snapshots
+    mount -o subvol=@var /dev/sda2 /mnt/var
     # Mounting the boot partition at /boot folder
     mount /dev/sda1 /mnt/boot
     lsblk
@@ -206,7 +206,7 @@ title    Arch Linux
 linux    /vmlinuz-linux
 initrd   /intel-ucode.img
 initrd   /initramfs-linux.img
-options  root=/dev/sda2 rootfstype=btrfs rootflags=subvol=@ elevator=deadline add_efi_memmap rw quiet splash loglevel=3 vt.global_cursor_default=0 plymouth.ignore_serial_consoles vga=current rd.systemd.show_status=auto r.udev.log_priority=3 nowatchdog fbcon=nodefer i915.fastboot=1 i915.invert_brightness=1
+options  root=/dev/sda2 rootfstype=btrfs rootflags=subvol=@ elevator=deadline add_efi_memmap rw splash loglevel=3 vt.global_cursor_default=0 plymouth.ignore_serial_consoles vga=current rd.systemd.show_status=auto r.udev.log_priority=3 nowatchdog fbcon=nodefer i915.fastboot=1 i915.invert_brightness=1
 EOF
     cat /mnt/boot/loader/entries/arch.conf
 
