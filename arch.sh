@@ -1,6 +1,6 @@
 #!/bin/bash
 
-uefi_partition() {
+create_partition() {
 	clear
 	echo "Creating ROOT partition"
     sgdisk -Z /dev/sda
@@ -14,9 +14,9 @@ uefi_partition() {
 	sleep 10
 }
 
-uefi_makefs() {
+ext4_makefs() {
 	clear
-	echo "Make and Mounting partition"
+	echo "Makeing and Mounting EXT4 partition"
 	mkfs.ext4 /dev/sda2
 	mkfs.fat -F32 /dev/sda1
 	mount /dev/sda2 /mnt
@@ -43,11 +43,38 @@ uefi_makefs() {
 	sleep 20
 }
 
+btrfs_makefs() {
+    clear
+	echo "Makeing and Mounting BTRFS partition"
+    mkfs.fat -F32 /dev/sda1
+    mkfs.btrfs -L ROOT /dev/sda2
+	mount /dev/sda2 /mnt
+	mkdir -p /mnt/boot/
+    btrfs sub create /mnt/@
+    btrfs sub create /mnt/@home
+    btrfs sub create /mnt/@var
+    btrfs sub create /mnt/@.snapshots
+    umount /mnt
+    sleep 5
+
+    mount -o noatime,commit=120,compress=zstd,space_cache,subvol=@ /dev/sda3 /mnt
+    # You need to manually create folder to mount the other subvolumes at
+    mkdir /mnt/{boot,home,var,.snapshots}
+    mount -o noatime,commit=120,compress=zstd,space_cache,subvol=@home /dev/sda3 /mnt/home
+    mount -o noatime,commit=120,compress=zstd,space_cache,subvol=@.snapshots /dev/sda3 /mnt/.snapshots
+    mount -o subvol=@var /dev/sda3 /mnt/var
+    # Mounting the boot partition at /boot folder
+    mount /dev/sda1 /mnt/boot
+    lsblk
+    sleep 20
+}
+
+
 install_pkgs() {
 	clear
 	echo "Installing Required packages"
 	pacman -Sy --noconfirm archlinux-keyring ;
-	pacstrap /mnt base base-devel linux linux-headers linux-firmware xf86-video-nouveau \
+	pacstrap /mnt base base-devel linux linux-headers linux-firmware xf86-video-nouveau btrfs-progs \
         git neovim intel-ucode curl htop neofetch python-pip gawk grub efibootmgr \
         networkmanager network-manager-applet dialog wpa_supplicant mtools \
         dosfstools avahi gvfs gvfs-smb nfs-utils inetutils dnsutils bluez \
@@ -156,10 +183,49 @@ printf "\e[1;32mDone! Type exit, umount -a and reboot.\e[0m"
 EOF
 }
 
-grub_uefi() {
+grub_ext4() {
 	cat <<EOF | arch-chroot /mnt bash
 grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB  && grub-mkconfig -o /boot/grub/grub.cfg
 EOF
+}
+
+systemd_btrfs() {
+    clear
+
+    arch-chroot /mnt /usr/bin/bootctl --path=/boot install
+    cat <<EOF > /mnt/boot/loader/loader.conf
+default      arch.conf
+timeout      0
+editor       no
+console-mode auto
+EOF
+    cat /mnt/boot/loader/loader.conf
+
+    cat <<EOF > /mnt/boot/loader/entries/arch.conf
+title    Arch Linux
+linux    /vmlinuz-linux
+initrd   /intel-ucode.img
+initrd   /initramfs-linux.img
+options  root=/dev/sda2 rootfstype=btrfs rootflags=subvol=@ elevator=deadline add_efi_memmap rw quiet splash loglevel=3 vt.global_cursor_default=0 plymouth.ignore_serial_consoles vga=current rd.systemd.show_status=auto r.udev.log_priority=3 nowatchdog fbcon=nodefer i915.fastboot=1 i915.invert_brightness=1
+EOF
+    cat /mnt/boot/loader/entries/arch.conf
+
+    mkdir /mnt/etc/pacman.d/hooks/
+    touch /mnt/etc/pacman.d/hooks/100-systemd-boot.hook
+    
+    cat <<EOF > /mnt/etc/pacman.d/hooks/100-systemd-boot.hook
+[Trigger]
+Type = Package
+Operation = Upgrade
+Target = systemd
+
+[Action]
+Description = Updating systemd-boot
+When = PostTransaction
+Exec = /usr/bin/bootctl update
+EOF
+    cat /mnt/etc/pacman.d/hooks/100-systemd-boot.hook
+
 }
 
 de_type() {
@@ -221,6 +287,58 @@ de_choose() {
 
 }
 
+filesystem_type() {
+    if [[ $FS == EXT4 ]] || [[ $FS == 1 ]] || [[ $FS == ext4 ]]; then
+        printf "\e[1;34m Selected EXT4 \n\e[0m"
+        ext4_makefs
+    elif [[ $FS == BTRFS ]] || [[ $FS == 2 ]] || [[ $FS == btrfs ]]; then
+        printf "\e[1;34m Selected BTRFS \n\e[0m"
+        btrfs_makefs
+    else
+        printf "\e[1;34m Invalid option \e[0m"
+        exit
+    fi
+}
+
+filesystem_choose() {
+  DIALOG_CANCEL=1
+  DIALOG_ESC=255
+  HEIGHT=0
+  WIDTH=0
+  exec 3>&1
+  FS=$(dialog \
+    --backtitle "Arch Installation" \
+    --title "Select Filesystem type" \
+    --cancel-label "Exit" \
+    --menu "Please select:" $HEIGHT $WIDTH 4 \
+    "1" "EXT4" \
+    "2" "BTRFS" \
+    2>&1 1>&3)
+    exit_status=$?
+  exec 3>&-
+    case $exit_status in
+    $DIALOG_CANCEL)
+      clear
+      echo "Program terminated."
+      exit
+      ;;
+    $DIALOG_ESC)
+      clear
+      echo "Program aborted." >&2
+      exit 1
+      ;;
+  esac
+  case $FS in
+	  1 )
+		  ;;
+	  2 )
+		  ;;
+	  3 )
+		  ;;
+  esac
+
+}
+
 postinstall() {
 cat <<EOF > /mnt/home/vijay/temp.sh
 echo "CLONING: Dotfiles"
@@ -247,14 +365,23 @@ rm -v /mnt/home/vijay/temp.sh
 
 main() {
   de_choose
-
-  uefi_partition
-  uefi_makefs
+  create_partition
+  filesystem_choose
+  filesystem_type
   install_pkgs
   chroot_ex
   de_type
-  grub_uefi
-  printf "\e[1;35m\n\nUEFI Installation completed \n\e[0m"
+  if [[ $FS == EXT4 ]] || [[ $FS == 1 ]] || [[ $FS == ext4 ]]; then
+      printf "\e[1;34m Selected EXT4 \n\e[0m"
+      grub_ext4
+  elif [[ $FS == BTRFS ]] || [[ $FS == 2 ]] || [[ $FS == btrfs ]]; then
+      printf "\e[1;34m Selected BTRFS \n\e[0m"
+      systemd_btrfs
+  else
+      printf "\e[1;34m Invalid option \e[0m"
+      exit
+  fi
+  printf "\e[1;35m\n\next4 Installation completed \n\e[0m"
 }
 
 printf "\e[1;32m*********Arch Script Started**********\n\e[0m"
