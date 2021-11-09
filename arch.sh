@@ -47,7 +47,7 @@ btrfs_makefs() {
     clear
 	echo "Makeing and Mounting BTRFS partition"
     mkfs.fat -F32 /dev/sda1
-    mkfs.btrfs -L ROOT /dev/sda2
+    mkfs.btrfs -L ROOT -f /dev/sda2
 	mount /dev/sda2 /mnt
 	mkdir -p /mnt/boot/
     btrfs sub create /mnt/@
@@ -131,7 +131,7 @@ etc-configs() {
 	ln -sf /usr/share/zoneinfo/Asia/Kolkata /etc/localtime
 	timedatectl set-ntp true
 	hwclock --systohc
-	echo "archlinux" >> /etc/hostname
+	echo "archbtw" >> /etc/hostname
 	echo "127.0.0.1 localhost" >> /etc/hosts
 	echo "::1       localhost" >> /etc/hosts
 	echo "127.0.1.1 archbtw.localdomain archbtw" >> /etc/hosts
@@ -195,7 +195,7 @@ systemd_btrfs() {
     arch-chroot /mnt /usr/bin/bootctl --path=/boot install
     cat <<EOF > /mnt/boot/loader/loader.conf
 default      arch.conf
-timeout      0
+timeout      5
 editor       no
 console-mode auto
 EOF
@@ -206,7 +206,7 @@ title    Arch Linux
 linux    /vmlinuz-linux
 initrd   /intel-ucode.img
 initrd   /initramfs-linux.img
-options  root=/dev/sda2 rootfstype=btrfs rootflags=subvol=@ elevator=deadline add_efi_memmap rw splash loglevel=3 vt.global_cursor_default=0 plymouth.ignore_serial_consoles vga=current rd.systemd.show_status=auto r.udev.log_priority=3 nowatchdog fbcon=nodefer i915.fastboot=1 i915.invert_brightness=1
+options  root=/dev/sda2 rootfstype=btrfs rootflags=subvol=@ elevator=deadline add_efi_memmap rw quiet splash loglevel=3 vt.global_cursor_default=0 plymouth.ignore_serial_consoles vga=current rd.systemd.show_status=auto r.udev.log_priority=3 nowatchdog fbcon=nodefer i915.fastboot=1 i915.invert_brightness=1
 EOF
     cat /mnt/boot/loader/entries/arch.conf
 
