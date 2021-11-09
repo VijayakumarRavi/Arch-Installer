@@ -135,9 +135,9 @@ starting-service() {
 
 config-users() {
 	printf "\e[1;32m\n********createing user vijay*********\n\e[0m"
-	useradd -G wheel,audio,video -m vijay -p vijay 
+	useradd -G wheel,audio,video -m vijay
 	echo root:vijay | chpasswd
-	# echo vijay:vijay | chpasswd
+	echo vijay:vijay | chpasswd
 	newgrp libvirt
 	usermod -aG libvirt vijay
 	# echo "vijay ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers.d/vijay
@@ -224,9 +224,10 @@ de_choose() {
 postinstall() {
 cat <<EOF > /mnt/home/vijay/temp.sh
 echo "CLONING: Dotfiles"
+cd /home/vijay
 git clone --separate-git-dir=/home/vijay/.dotfiles https://github.com/VijayakumarRavi/dotfiles.git tmpdotfiles
 rsync --recursive --verbose --exclude '.git' tmpdotfiles/ /home/vijay/
-rm -rv tmpdotfile/
+rm -rv tmpdotfiles/
 alias dots='/usr/bin/git --git-dir=/home/vijay/.dotfiles/ --work-tree=/home/vijay'
 dots config --local status.showUntrackedFiles no
 
