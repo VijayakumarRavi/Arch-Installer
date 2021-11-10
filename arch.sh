@@ -352,6 +352,14 @@ preinstall() {
 	iso=$(curl -4 ifconfig.co/country-iso)
 	timedatectl set-ntp true
 	timedatectl set-timezone Asia/Kolkata
+    cat  <<EOF >> /etc/pacman.conf
+[vijay-repo]
+SigLevel = DatabaseTrustedOnly
+SigLevel = Optional DatabaseOptional
+Server = https://gitlab.com/vijaysrv/$repo/-/raw/main/$arch
+EOF
+    pacman-key --recv-keys --keyserver  hkp://pgp.mit.edu 93FD2B22ADBCAE64
+    pacman-key --lsign-key 93FD2B22ADBCAE64
 	pacman -Sy --noconfirm dialog pacman-contrib terminus-font reflector rsync
 	setfont ter-v22b
 	sed -i 's/^#Para/Para/' /etc/pacman.conf
