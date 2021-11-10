@@ -69,18 +69,11 @@ btrfs_makefs() {
     sleep 20
 }
 
-
-install_pkgs() {
-	clear
-	echo "Installing Required packages"
-	pacman -Sy --noconfirm archlinux-keyring ;
-	pacstrap /mnt base base-devel linux linux-headers linux-firmware xf86-video-nouveau btrfs-progs vijay-base
-	genfstab -U /mnt >> /mnt/etc/fstab ;
-	cat /mnt/etc/fstab ;
-	sleep 20
-}
-
 chroot_ex() {
+    clear
+    genfstab -U /mnt >> /mnt/etc/fstab ;
+    cat /mnt/etc/fstab ;
+    sleep 20
 	cat <<EOF | arch-chroot /mnt bash
 #!/bin/bash
 printf "\e[1;32m\n*********CHROOT Scripts Started**********\n\e[0m"
@@ -198,6 +191,8 @@ de_type() {
 		printf "\e[1;34m Selected i3wm \n\e[0m"
 		pacstrap /mnt vijay-i3
 	elif [[ $DE == basic ]] || [[ $DE == 4 ]]; then
+        printf "\e[1;34m Selected Base Install \n\e[0m"
+        pacstrap /mnt vijay-base
 		printf "\e[1;34m Basic installation completed \e[0m"
 	else
 		printf "\e[1;34m Invalid option \e[0m"
@@ -314,12 +309,11 @@ rm -v /mnt/home/vijay/temp.sh
 
 main() {
   de_choose
-  create_partition
   filesystem_choose
+  create_partition
   filesystem_type
-  install_pkgs
-  chroot_ex
   de_type
+  chroot_ex
   if [[ $FS == EXT4 ]] || [[ $FS == 1 ]] || [[ $FS == ext4 ]]; then
       printf "\e[1;34m Selected EXT4 \n\e[0m"
       grub_ext4
@@ -356,7 +350,7 @@ preinstall() {
 [vijay-repo]
 SigLevel = DatabaseTrustedOnly
 SigLevel = Optional DatabaseOptional
-Server = https://gitlab.com/vijaysrv/$repo/-/raw/main/$arch
+Server = https://gitlab.com/vijaysrv/vijay-repo/-/raw/main/x86_64
 EOF
     pacman-key --recv-keys --keyserver  hkp://pgp.mit.edu 93FD2B22ADBCAE64
     pacman-key --lsign-key 93FD2B22ADBCAE64
