@@ -74,51 +74,10 @@ install_pkgs() {
 	clear
 	echo "Installing Required packages"
 	pacman -Sy --noconfirm archlinux-keyring ;
-	pacstrap /mnt base base-devel linux linux-headers linux-firmware xf86-video-nouveau btrfs-progs \
-        git neovim intel-ucode curl htop neofetch python-pip gawk grub efibootmgr \
-        networkmanager network-manager-applet dialog wpa_supplicant mtools \
-        dosfstools avahi gvfs gvfs-smb nfs-utils inetutils dnsutils bluez \
-        bluez-utils alsa-utils pulseaudio bash-completion openssh rsync acpi \
-        acpi_call tlp iptables-nft ipset firewalld sof-firmware nss-mdns acpid \
-        os-prober ntfs-3g terminus-font cups reflector polkit udisks2 \
-        pulseaudio-bluetooth npm
+	pacstrap /mnt base base-devel linux linux-headers linux-firmware xf86-video-nouveau btrfs-progs vijay-base
 	genfstab -U /mnt >> /mnt/etc/fstab ;
 	cat /mnt/etc/fstab ;
 	sleep 20
-}
-
-dwm_install() {
-    pacstrap /mnt  xorg-server xorg-xinit xorg-xkill xorg-xsetroot xorg-xbacklight xorg-xprop \
-     noto-fonts noto-fonts-emoji noto-fonts-cjk ttf-jetbrains-mono ttf-joypixels ttf-font-awesome \
-     sxiv mpv zathura zathura-pdf-mupdf ffmpeg imagemagick  \
-     virt-manager qemu qemu-arch-extra ovmf vde2 materia-gtk-theme \
-     ebtables dnsmasq bridge-utils openbsd-netcat \
-     fzf man-db xwallpaper python-pywal youtube-dl unclutter xclip maim \
-     zip unzip unrar p7zip xdotool papirus-icon-theme brightnessctl  \
-     dosfstools ntfs-3g git sxhkd neovim arc-gtk-theme rsync firefox dash \
-     xcompmgr libnotify dunst slock jq networkmanager rsync pamixer
-    cat <<EOF | arch-chroot /mnt bash
-git clone --depth=1 https://github.com/VijayakumarRavi/dwm.git /home/vijay/.local/src/dwm
-make -C /home/vijay/.local/src/dwm install
-git clone --depth=1 https://github.com/VijayakumarRavi/st.git /home/vijay/.local/src/st
-make -C /home/vijay/.local/src/st install
-git clone --depth=1 https://github.com/VijayakumarRavi/dmenu.git /home/vijay/.local/src/dmenu
-make -C /home/vijay/.local/src/dmenu install
-EOF
-}
-
-i3_install() {
-	pacstrap /mnt xorg i3 dmenu ttf-dejavu ttf-liberation noto-fonts firefox nitrogen picom lxappearance vlc pcmanfm \
-        papirus-icon-theme alacritty blueman volumeicon virt-manager qemu qemu-arch-extra ovmf vde2 materia-gtk-theme \
-        ebtables dnsmasq bridge-utils openbsd-netcat awesome rofi picom xclip ttf-roboto polkit-gnome \
-        materia-theme lxappearance flameshot network-manager-applet xfce4-power-manager \
-        papirus-icon-theme net-tools noto-fonts-emoji noto-fonts noto-fonts-extra
-}
-
-gnome_install() {
-	pacstrap /mnt xorg gdm gnome gnome-tweaks htop ttf-dejavu ttf-liberation noto-fonts firefox vlc pcmanfm \
-        materia-gtk-theme papirus-icon-theme alacritty virt-manager qemu qemu-arch-extra ovmf \
-        vde2 ebtables dnsmasq bridge-utils openbsd-netcat
 }
 
 chroot_ex() {
@@ -231,13 +190,13 @@ EOF
 de_type() {
 	if [[ $DE == GNOME ]] || [[ $DE == 1 ]] || [[ $DE == gnome ]]; then
 		printf "\e[1;34m Selected Gnome \n\e[0m"
-		gnome_install
+		pacstrap /mnt vijay-gnome
 	elif [[ $DE == dwm ]] || [[ $DE == 2 ]] || [[ $DE == dwm ]]; then
 		printf "\e[1;34m Selected dwm \n\e[0m"
-		dwm_install
+		pacstrap /mnt vijay-dwm
 	elif [[ $DE == i3 ]] || [[ $DE == 3 ]] || [[ $DE == i3wm ]]; then
 		printf "\e[1;34m Selected i3wm \n\e[0m"
-		i3_install
+		pacstrap /mnt vijay-i3
 	elif [[ $DE == basic ]] || [[ $DE == 4 ]]; then
 		printf "\e[1;34m Basic installation completed \e[0m"
 	else
@@ -341,21 +300,11 @@ filesystem_choose() {
 
 postinstall() {
 cat <<EOF > /mnt/home/vijay/temp.sh
-echo "CLONING: Dotfiles"
-cd /home/vijay
-git clone --separate-git-dir=/home/vijay/.dotfiles https://github.com/VijayakumarRavi/dotfiles.git tmpdotfiles
-rsync --recursive --verbose --exclude '.git' tmpdotfiles/ /home/vijay/
-rm -rv tmpdotfiles/
-alias dots='/usr/bin/git --git-dir=/home/vijay/.dotfiles/ --work-tree=/home/vijay'
-dots config --local status.showUntrackedFiles no
-
-
 echo "CLONING: YAY"
 cd /home/vijay
 git clone "https://aur.archlinux.org/yay.git"
 cd /home/vijay/yay
 makepkg -si --noconfirm
-
 EOF
 
 chmod +x /mnt/home/vijay/temp.sh
