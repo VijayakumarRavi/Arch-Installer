@@ -71,7 +71,7 @@ btrfs_makefs() {
 
 chroot_ex() {
 	clear
-	genfstab -U /mnt >> /mnt/etc/fstab ;
+	genfstab -U /mnt > /mnt/etc/fstab ;
 	cat /mnt/etc/fstab ;
 	printf "\n\n\n\n\n"
 	cp -vf /etc/pacman.conf /mnt/etc/pacman.conf
@@ -121,7 +121,7 @@ config-users() {
 	echo vijay:vijay | chpasswd
 	newgrp libvirt
 	usermod -aG libvirt vijay
-	echo "%wheel ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+	echo "vijay ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/vijay
 	printf "\e[1;32m\n********createing user Successfully Done*********\n\e[0m"
 	sed -i 's/^#Para/Para/' /etc/pacman.conf
 	sleep 10
@@ -165,7 +165,7 @@ EOF
 
     mkdir /mnt/etc/pacman.d/hooks/
     touch /mnt/etc/pacman.d/hooks/100-systemd-boot.hook
-    
+
     cat <<EOF > /mnt/etc/pacman.d/hooks/100-systemd-boot.hook
 [Trigger]
 Type = Package
@@ -184,16 +184,16 @@ EOF
 de_type() {
 	if [[ $DE == GNOME ]] || [[ $DE == 1 ]] || [[ $DE == gnome ]]; then
 		printf "\e[1;34m Selected Gnome \n\e[0m"
-		pacstrap /mnt base gnome vijay-gnome vijay-dotfiles vijay-wallpapers
+		pacstrap /mnt base base-devel gnome vijay-gnome vijay-dotfiles vijay-wallpapers
 	elif [[ $DE == dwm ]] || [[ $DE == 2 ]] || [[ $DE == dwm ]]; then
 		printf "\e[1;34m Selected dwm \n\e[0m"
-		pacstrap /mnt base vijay-full-dwm vijay-dotfiles vijay-wallpapers
+		pacstrap /mnt base base-devel vijay-full-dwm vijay-dotfiles vijay-wallpapers
 	elif [[ $DE == i3 ]] || [[ $DE == 3 ]] || [[ $DE == i3wm ]]; then
 		printf "\e[1;34m Selected i3wm \n\e[0m"
-		pacstrap /mnt base i3 vijay-i3 vijay-dotfiles vijay-wallpapers
+		pacstrap /mnt base base-devel i3 vijay-i3 vijay-dotfiles vijay-wallpapers
 	elif [[ $DE == basic ]] || [[ $DE == 4 ]]; then
 		printf "\e[1;34m Selected Base Install \n\e[0m"
-		pacstrap /mnt vijay-base vijay-dotfiles
+		pacstrap /mnt base vijay-base base-devel vijay-dotfiles
 		printf "\e[1;34m Basic installation completed \e[0m"
 	else
 		printf "\e[1;34m Invalid option \e[0m"
