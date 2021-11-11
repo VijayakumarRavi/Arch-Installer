@@ -1,8 +1,8 @@
 #!/bin/bash
 
 create_partition() {
-	clear
-	echo "Creating ROOT partition"
+    clear
+    echo "Creating ROOT partition"
     sgdisk -Z /dev/sda
     sgdisk -a 2048 -o /dev/sda
 
@@ -11,7 +11,7 @@ create_partition() {
     sgdisk -n 2:0:0 -t 2:8300 -c 2:"ROOT"  /dev/sda
 
     lsblk
-	sleep 10
+    sleep 10
 }
 
 ext4_makefs() {
@@ -31,8 +31,8 @@ ext4_makefs() {
 	elif [[ -b /dev/sdb ]]; then
 		clear
 		echo "Creating home partition"
-        sgdisk -Z /dev/sdb
-        sgdisk -n 1:0:0 -t 1:8300 -c 1:"HOME" /dev/sdb
+		sgdisk -Z /dev/sdb
+		sgdisk -n 1:0:0 -t 1:8300 -c 1:"HOME" /dev/sdb
 		mkdir /mnt/home
 		mkfs.ext4 /dev/sdb1
 		mount /dev/sdb1 /mnt/home
@@ -44,41 +44,43 @@ ext4_makefs() {
 }
 
 btrfs_makefs() {
-    clear
+	clear
 	echo "Makeing and Mounting BTRFS partition"
-    mkfs.fat -F32 /dev/sda1
-    mkfs.btrfs -L ROOT -f /dev/sda2
+	mkfs.fat -F32 /dev/sda1
+	mkfs.btrfs -L ROOT -f /dev/sda2
 	mount /dev/sda2 /mnt
 	mkdir -p /mnt/boot/
-    btrfs sub create /mnt/@
-    btrfs sub create /mnt/@home
-    btrfs sub create /mnt/@var
-    btrfs sub create /mnt/@.snapshots
-    umount /mnt
-    sleep 5
-
-    mount -o noatime,commit=120,compress=zstd,space_cache,subvol=@ /dev/sda2 /mnt
-    # You need to manually create folder to mount the other subvolumes at
-    mkdir /mnt/{boot,home,var,.snapshots}
-    mount -o noatime,commit=120,compress=zstd,space_cache,subvol=@home /dev/sda2 /mnt/home
-    mount -o noatime,commit=120,compress=zstd,space_cache,subvol=@.snapshots /dev/sda2 /mnt/.snapshots
-    mount -o subvol=@var /dev/sda2 /mnt/var
-    # Mounting the boot partition at /boot folder
-    mount /dev/sda1 /mnt/boot
-    lsblk
-    sleep 20
+	btrfs sub create /mnt/@
+	btrfs sub create /mnt/@home
+	btrfs sub create /mnt/@var
+	btrfs sub create /mnt/@.snapshots
+	umount /mnt
+	sleep 5
+	
+	mount -o noatime,commit=120,compress=zstd,space_cache,subvol=@ /dev/sda2 /mnt
+	# You need to manually create folder to mount the other subvolumes at
+	mkdir /mnt/{boot,home,var,.snapshots}
+	mount -o noatime,commit=120,compress=zstd,space_cache,subvol=@home /dev/sda2 /mnt/home
+	mount -o noatime,commit=120,compress=zstd,space_cache,subvol=@.snapshots /dev/sda2 /mnt/.snapshots
+	mount -o subvol=@var /dev/sda2 /mnt/var
+	# Mounting the boot partition at /boot folder
+	mount /dev/sda1 /mnt/boot
+	lsblk
+	sleep 20
 }
 
 chroot_ex() {
-    clear
-    genfstab -U /mnt >> /mnt/etc/fstab ;
-    cat /mnt/etc/fstab ;
-    sleep 20
+	clear
+	genfstab -U /mnt >> /mnt/etc/fstab ;
+	cat /mnt/etc/fstab ;
+	printf "\n\n\n\n\n"
+	cp -vf /etc/pacman.conf /mnt/etc/pacman.conf
+	sleep 20
 	cat <<EOF | arch-chroot /mnt bash
+clear
 #!/bin/bash
 printf "\e[1;32m\n*********CHROOT Scripts Started**********\n\e[0m"
 etc-configs() {
-	clear
 	echo "editing config files"
 	ln -sf /usr/share/zoneinfo/Asia/Kolkata /etc/localtime
 	timedatectl set-ntp true
@@ -119,8 +121,7 @@ config-users() {
 	echo vijay:vijay | chpasswd
 	newgrp libvirt
 	usermod -aG libvirt vijay
-	# echo "vijay ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers.d/vijay
-    echo "%wheel ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+	echo "%wheel ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 	printf "\e[1;32m\n********createing user Successfully Done*********\n\e[0m"
 	sed -i 's/^#Para/Para/' /etc/pacman.conf
 	sleep 10
@@ -183,16 +184,16 @@ EOF
 de_type() {
 	if [[ $DE == GNOME ]] || [[ $DE == 1 ]] || [[ $DE == gnome ]]; then
 		printf "\e[1;34m Selected Gnome \n\e[0m"
-		pacstrap /mnt vijay-gnome
+		pacstrap /mnt base gnome vijay-gnome vijay-dotfiles vijay-wallpapers
 	elif [[ $DE == dwm ]] || [[ $DE == 2 ]] || [[ $DE == dwm ]]; then
 		printf "\e[1;34m Selected dwm \n\e[0m"
-		pacstrap /mnt vijay-dwm
+		pacstrap /mnt base vijay-full-dwm vijay-dotfiles vijay-wallpapers
 	elif [[ $DE == i3 ]] || [[ $DE == 3 ]] || [[ $DE == i3wm ]]; then
 		printf "\e[1;34m Selected i3wm \n\e[0m"
-		pacstrap /mnt vijay-i3
+		pacstrap /mnt base i3 vijay-i3 vijay-dotfiles vijay-wallpapers
 	elif [[ $DE == basic ]] || [[ $DE == 4 ]]; then
-        printf "\e[1;34m Selected Base Install \n\e[0m"
-        pacstrap /mnt vijay-base
+		printf "\e[1;34m Selected Base Install \n\e[0m"
+		pacstrap /mnt vijay-base vijay-dotfiles
 		printf "\e[1;34m Basic installation completed \e[0m"
 	else
 		printf "\e[1;34m Invalid option \e[0m"
@@ -243,14 +244,14 @@ de_choose() {
 
 filesystem_type() {
     if [[ $FS == EXT4 ]] || [[ $FS == 1 ]] || [[ $FS == ext4 ]]; then
-        printf "\e[1;34m Selected EXT4 \n\e[0m"
-        ext4_makefs
+	    printf "\e[1;34m Selected EXT4 \n\e[0m"
+	    ext4_makefs
     elif [[ $FS == BTRFS ]] || [[ $FS == 2 ]] || [[ $FS == btrfs ]]; then
-        printf "\e[1;34m Selected BTRFS \n\e[0m"
-        btrfs_makefs
+	    printf "\e[1;34m Selected BTRFS \n\e[0m"
+	    btrfs_makefs
     else
-        printf "\e[1;34m Invalid option \e[0m"
-        exit
+	    printf "\e[1;34m Invalid option \e[0m"
+	    exit
     fi
 }
 
@@ -315,14 +316,14 @@ main() {
   de_type
   chroot_ex
   if [[ $FS == EXT4 ]] || [[ $FS == 1 ]] || [[ $FS == ext4 ]]; then
-      printf "\e[1;34m Selected EXT4 \n\e[0m"
-      grub_ext4
+	  printf "\e[1;34m Selected EXT4 \n\e[0m"
+	  grub_ext4
   elif [[ $FS == BTRFS ]] || [[ $FS == 2 ]] || [[ $FS == btrfs ]]; then
-      printf "\e[1;34m Selected BTRFS \n\e[0m"
-      systemd_btrfs
+	  printf "\e[1;34m Selected BTRFS \n\e[0m"
+	  systemd_btrfs
   else
-      printf "\e[1;34m Invalid option \e[0m"
-      exit
+	  printf "\e[1;34m Invalid option \e[0m"
+	  exit
   fi
   printf "\e[1;35m\n\next4 Installation completed \n\e[0m"
 }
@@ -346,14 +347,14 @@ preinstall() {
 	iso=$(curl -4 ifconfig.co/country-iso)
 	timedatectl set-ntp true
 	timedatectl set-timezone Asia/Kolkata
-    cat  <<EOF >> /etc/pacman.conf
+	cat  <<EOF >> /etc/pacman.conf
 [vijay-repo]
 SigLevel = DatabaseTrustedOnly
 SigLevel = Optional DatabaseOptional
 Server = https://gitlab.com/vijaysrv/vijay-repo/-/raw/main/x86_64
 EOF
-    pacman-key --recv-keys --keyserver  hkp://pgp.mit.edu 93FD2B22ADBCAE64
-    pacman-key --lsign-key 93FD2B22ADBCAE64
+	pacman-key --recv-keys --keyserver  hkp://pgp.mit.edu 93FD2B22ADBCAE64
+	pacman-key --lsign-key 93FD2B22ADBCAE64
 	pacman -Sy --noconfirm dialog pacman-contrib terminus-font reflector rsync
 	setfont ter-v22b
 	sed -i 's/^#Para/Para/' /etc/pacman.conf
