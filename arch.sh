@@ -353,7 +353,7 @@ SigLevel = DatabaseTrustedOnly
 SigLevel = Optional DatabaseOptional
 Server = https://gitlab.com/vijaysrv/vijay-repo/-/raw/main/x86_64
 EOF
-	pacman-key --recv-keys --keyserver  hkp://pgp.mit.edu 93FD2B22ADBCAE64
+	pacman-key --recv-keys 93FD2B22ADBCAE64
 	pacman-key --lsign-key 93FD2B22ADBCAE64
 	pacman -Sy --noconfirm dialog pacman-contrib terminus-font reflector rsync
 	setfont ter-v22b
