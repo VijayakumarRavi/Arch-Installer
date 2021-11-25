@@ -160,43 +160,34 @@ de_type() {
 }
 
 de_choose() {
-  DIALOG_CANCEL=1
-  DIALOG_ESC=255
-  HEIGHT=0
-  WIDTH=0
-  exec 3>&1
-  DE=$(dialog \
-    --backtitle "Arch Installation" \
-    --title "Select Desktop type" \
-    --cancel-label "Exit" \
-    --menu "Please select:" $HEIGHT $WIDTH 4 \
-    "1" "Dwm" \
-    "2" "i3wm" \
-    "3" "basic" \
-    2>&1 1>&3)
-    exit_status=$?
-  exec 3>&-
-    case $exit_status in
-    $DIALOG_CANCEL)
-      clear
-      echo "Program terminated."
-      exit
-      ;;
-    $DIALOG_ESC)
-      clear
-      echo "Program aborted." >&2
-      exit 1
-      ;;
-  esac
-  case $DE in
-	  1 )
-		  ;;
-	  2 )
-		  ;;
-	  3 )
-		  ;;
-  esac
+    PS3="Select Desktop Environment: "
 
+    select opt in dwm i3 basic quit; do
+        case $opt in
+            dwm)
+                printf "\e[1;34m Selected dwm \n\e[0m"
+                sleep 5
+                pacstrap /mnt base base-devel vijay-full-dwm vijay-dotfiles vijay-wallpapers
+                break;;
+            i3)
+                printf "\e[1;34m Selected dwm \n\e[0m"
+                sleep 5
+                pacstrap /mnt base base-devel vijay-full-dwm vijay-dotfiles vijay-wallpapers
+                break;;
+            basic)
+                printf "\e[1;34m Selected Base Install \n\e[0m"
+                sleep 5
+                pacstrap /mnt base vijay-base base-devel vijay-dotfiles
+                break;;
+            quit)
+                echo "selected quit";
+                break;;
+            *)
+                echo "Invalid option $REPLY";;
+        esac
+    done
+
+    echo "Selected WM = $DE"
 }
 
 filesystem_type() {
@@ -213,42 +204,27 @@ filesystem_type() {
 }
 
 filesystem_choose() {
-  DIALOG_CANCEL=1
-  DIALOG_ESC=255
-  HEIGHT=0
-  WIDTH=0
-  exec 3>&1
-  FS=$(dialog \
-    --backtitle "Arch Installation" \
-    --title "Select Filesystem type" \
-    --cancel-label "Exit" \
-    --menu "Please select:" $HEIGHT $WIDTH 4 \
-    "1" "EXT4" \
-    "2" "BTRFS" \
-    2>&1 1>&3)
-    exit_status=$?
-  exec 3>&-
-    case $exit_status in
-    $DIALOG_CANCEL)
-      clear
-      echo "Program terminated."
-      exit
-      ;;
-    $DIALOG_ESC)
-      clear
-      echo "Program aborted." >&2
-      exit 1
-      ;;
-  esac
-  case $FS in
-	  1 )
-		  ;;
-	  2 )
-		  ;;
-	  3 )
-		  ;;
-  esac
+    PS3="Select filesystem type: "
 
+    select opt in btrfs ext4 quit; do
+        case $opt in
+            btrfs)
+                echo "Selected filesystem BTRFS";
+                sleep 3;
+                btrfs_makefs;
+                break;;
+            ext4)
+                echo "Selected filesystem EXT4";
+                sleep 3;
+                ext4_makefs;
+                break;;
+            quit)
+                echo "selected quit";
+                break;;
+            *)
+                echo "Invalid option $REPLY";;
+        esac
+    done
 }
 
 postinstall() {
@@ -267,11 +243,11 @@ rm -v /mnt/home/vijay/temp.sh
 }
 
 main() {
-  de_choose
   filesystem_choose
+  de_choose
   create_partition
-  filesystem_type
-  de_type
+  # filesystem_type
+  # de_type
   chroot_ex
   grub_ext4
   printf "\e[1;35m\n\next4 Installation completed \n\e[0m"
@@ -302,7 +278,7 @@ Server = https://gitlab.com/vijaysrv/vijay-repo/-/raw/main/x86_64
 EOF
 	pacman-key --recv-keys 5098EE07F4F9C091
 	pacman-key --lsign-key 5098EE07F4F9C091
-	pacman -Sy --noconfirm dialog pacman-contrib terminus-font reflector rsync
+	pacman -Sy --noconfirm pacman-contrib terminus-font reflector rsync
 	setfont ter-v22b
 	sed -i 's/^#Para/Para/' /etc/pacman.conf
 	mv /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.backup
