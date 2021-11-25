@@ -175,13 +175,13 @@ filesystem_choose() {
 de_type() {
 	if [[ $DE == dwm ]] || [[ $DE == 1 ]]; then
 		printf "\e[1;34m Selected dwm \n\e[0m"
-		pacstrap /mnt base base-devel vijay-full-dwm
+		pacstrap /mnt xorg base base-devel vijay-full-dwm
 	elif [[ $DE == i3 ]] || [[ $DE == 2 ]]; then
 		printf "\e[1;34m Selected i3wm \n\e[0m"
-		pacstrap /mnt base base-devel i3 vijay-i3
+		pacstrap /mnt base xorg base-devel i3 vijay-i3
 	elif [[ $DE == basic ]] || [[ $DE == 3 ]]; then
 		printf "\e[1;34m Selected Base Install \n\e[0m"
-		pacstrap /mnt base vijay-base base-devel
+		pacstrap /mnt xorg base vijay-base base-devel
 		printf "\e[1;34m Basic installation completed \e[0m"
 	else
 		printf "\e[1;34m Invalid option \e[0m"
