@@ -101,7 +101,6 @@ config-users() {
 	useradd -G wheel,audio,video -m vijay
 	echo root:vijay | chpasswd
 	echo vijay:vijay | chpasswd
-    groupadd libvirt
 	usermod -aG libvirt vijay
 	echo "vijay ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/vijay
 	printf "\e[1;32m\n********createing user Successfully Done*********\n\e[0m"
