@@ -96,30 +96,12 @@ etc-configs() {
 	sleep 10
 }
 
-starting-service() {
-	clear
-	echo "Enableing Services "
-	systemctl enable NetworkManager
-	systemctl enable bluetooth
-	systemctl enable cups.service
-	systemctl enable sshd
-	systemctl enable avahi-daemon
-	systemctl enable tlp
-	systemctl enable reflector.timer
-	systemctl enable fstrim.timer
-	systemctl enable firewalld
-	systemctl enable acpid
-	systemctl enable libvirtd
-	systemctl enable gdm
-	sleep 10
-}
-
 config-users() {
 	printf "\e[1;32m\n********createing user vijay*********\n\e[0m"
 	useradd -G wheel,audio,video -m vijay
 	echo root:vijay | chpasswd
 	echo vijay:vijay | chpasswd
-	newgrp libvirt
+    groupadd libvirt
 	usermod -aG libvirt vijay
 	echo "vijay ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/vijay
 	printf "\e[1;32m\n********createing user Successfully Done*********\n\e[0m"
@@ -127,10 +109,8 @@ config-users() {
 	sleep 10
 }
 
-
 etc-configs
 config-users
-starting-service
 sleep 10
 printf "\e[1;32mDone! Type exit, umount -a and reboot.\e[0m"
 EOF
@@ -140,23 +120,6 @@ grub_ext4() {
 	cat <<EOF | arch-chroot /mnt bash
 grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB  && grub-mkconfig -o /boot/grub/grub.cfg
 EOF
-}
-
-de_type() {
-	if [[ $DE == Dwm ]] || [[ $DE == 1 ]]; then
-		printf "\e[1;34m Selected dwm \n\e[0m"
-		pacstrap /mnt base base-devel vijay-full-dwm vijay-dotfiles vijay-wallpapers
-	elif [[ $DE == i3wm ]] || [[ $DE == 2 ]]; then
-		printf "\e[1;34m Selected i3wm \n\e[0m"
-		pacstrap /mnt base base-devel i3 vijay-i3 vijay-dotfiles vijay-wallpapers
-	elif [[ $DE == basic ]] || [[ $DE == 3 ]]; then
-		printf "\e[1;34m Selected Base Install \n\e[0m"
-		pacstrap /mnt base vijay-base base-devel vijay-dotfiles
-		printf "\e[1;34m Basic installation completed \e[0m"
-	else
-		printf "\e[1;34m Invalid option \e[0m"
-		exit
-	fi
 }
 
 de_choose() {
@@ -190,31 +153,18 @@ de_choose() {
     echo "Selected WM = $DE"
 }
 
-filesystem_type() {
-    if [[ $FS == EXT4 ]] || [[ $FS == 1 ]] || [[ $FS == ext4 ]]; then
-	    printf "\e[1;34m Selected EXT4 \n\e[0m"
-	    ext4_makefs
-    elif [[ $FS == BTRFS ]] || [[ $FS == 2 ]] || [[ $FS == btrfs ]]; then
-	    printf "\e[1;34m Selected BTRFS \n\e[0m"
-	    btrfs_makefs
-    else
-	    printf "\e[1;34m Invalid option \e[0m"
-	    exit
-    fi
-}
-
 filesystem_choose() {
     PS3="Select filesystem type: "
 
     select opt in btrfs ext4 quit; do
         case $opt in
             btrfs)
-                echo "Selected filesystem BTRFS";
+                printf "\e[1;34m Selected BTRFS \n\e[0m"
                 sleep 3;
                 btrfs_makefs;
                 break;;
             ext4)
-                echo "Selected filesystem EXT4";
+                printf "\e[1;34m Selected EXT4 \n\e[0m"
                 sleep 3;
                 ext4_makefs;
                 break;;
@@ -243,11 +193,9 @@ rm -v /mnt/home/vijay/temp.sh
 }
 
 main() {
+  create_partition
   filesystem_choose
   de_choose
-  create_partition
-  # filesystem_type
-  # de_type
   chroot_ex
   grub_ext4
   printf "\e[1;35m\n\next4 Installation completed \n\e[0m"
