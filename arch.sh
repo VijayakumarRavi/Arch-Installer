@@ -126,21 +126,16 @@ de_choose() {
     PS3="Select Desktop Environment: "
 
     select opt in dwm i3 basic quit; do
+
         case $opt in
             dwm)
-                printf "\e[1;34m Selected dwm \n\e[0m"
-                sleep 5
-                pacstrap /mnt xorg base base-devel vijay-full-dwm
+                DE="dwm";
                 break;;
             i3)
-                printf "\e[1;34m Selected dwm \n\e[0m"
-                sleep 5
-                pacstrap /mnt xorg base base-devel vijay-full-dwm
+                DE="i3";
                 break;;
             basic)
-                printf "\e[1;34m Selected Base Install \n\e[0m"
-                sleep 5
-                pacstrap /mnt base vijay-base base-devel
+                DE="basic";
                 break;;
             quit)
                 echo "selected quit";
@@ -151,22 +146,19 @@ de_choose() {
     done
 
     echo "Selected WM = $DE"
+    sleep 2
 }
 
 filesystem_choose() {
     PS3="Select filesystem type: "
 
-    select opt in btrfs ext4 quit; do
+    select opt in dwm i3 basic quit; do
         case $opt in
-            btrfs)
-                printf "\e[1;34m Selected BTRFS \n\e[0m"
-                sleep 3;
-                btrfs_makefs;
+            dwm)
+                FS="btrfs";
                 break;;
-            ext4)
-                printf "\e[1;34m Selected EXT4 \n\e[0m"
-                sleep 3;
-                ext4_makefs;
+            i3)
+                FS="ext4";
                 break;;
             quit)
                 echo "selected quit";
@@ -175,6 +167,39 @@ filesystem_choose() {
                 echo "Invalid option $REPLY";;
         esac
     done
+
+    echo "Selected WM = $FS"
+    sleep 2
+}
+
+de_type() {
+	if [[ $DE == dwm ]] || [[ $DE == 1 ]]; then
+		printf "\e[1;34m Selected dwm \n\e[0m"
+		pacstrap /mnt base base-devel vijay-full-dwm
+	elif [[ $DE == i3 ]] || [[ $DE == 2 ]]; then
+		printf "\e[1;34m Selected i3wm \n\e[0m"
+		pacstrap /mnt base base-devel i3 vijay-i3
+	elif [[ $DE == basic ]] || [[ $DE == 3 ]]; then
+		printf "\e[1;34m Selected Base Install \n\e[0m"
+		pacstrap /mnt base vijay-base base-devel
+		printf "\e[1;34m Basic installation completed \e[0m"
+	else
+		printf "\e[1;34m Invalid option \e[0m"
+		exit
+	fi
+}
+
+filesystem_type() {
+    if [[ $FS == EXT4 ]] || [[ $FS == 1 ]] || [[ $FS == ext4 ]]; then
+	    printf "\e[1;34m Selected EXT4 \n\e[0m"
+	    ext4_makefs
+    elif [[ $FS == BTRFS ]] || [[ $FS == 2 ]] || [[ $FS == btrfs ]]; then
+	    printf "\e[1;34m Selected BTRFS \n\e[0m"
+	    btrfs_makefs
+    else
+	    printf "\e[1;34m Invalid option \e[0m"
+	    exit
+    fi
 }
 
 postinstall() {
@@ -196,6 +221,8 @@ main() {
   create_partition
   filesystem_choose
   de_choose
+  filesystem_type
+  de_type
   chroot_ex
   grub_ext4
   printf "\e[1;35m\n\next4 Installation completed \n\e[0m"
