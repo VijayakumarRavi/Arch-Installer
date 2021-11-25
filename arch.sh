@@ -130,17 +130,17 @@ de_choose() {
             dwm)
                 printf "\e[1;34m Selected dwm \n\e[0m"
                 sleep 5
-                pacstrap /mnt base base-devel vijay-full-dwm vijay-dotfiles vijay-wallpapers
+                pacstrap /mnt xorg base base-devel vijay-full-dwm
                 break;;
             i3)
                 printf "\e[1;34m Selected dwm \n\e[0m"
                 sleep 5
-                pacstrap /mnt base base-devel vijay-full-dwm vijay-dotfiles vijay-wallpapers
+                pacstrap /mnt xorg base base-devel vijay-full-dwm
                 break;;
             basic)
                 printf "\e[1;34m Selected Base Install \n\e[0m"
                 sleep 5
-                pacstrap /mnt base vijay-base base-devel vijay-dotfiles
+                pacstrap /mnt base vijay-base base-devel
                 break;;
             quit)
                 echo "selected quit";
@@ -184,7 +184,7 @@ cd /home/vijay
 git clone "https://aur.archlinux.org/yay.git"
 cd /home/vijay/yay
 makepkg -si --noconfirm
-yay -Sy blesh
+yay -Sy blesh vijay-dotfiles vijay-wallpapers
 EOF
 
 chmod +x /mnt/home/vijay/temp.sh
