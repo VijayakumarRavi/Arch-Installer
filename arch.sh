@@ -142,56 +142,14 @@ grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB 
 EOF
 }
 
-systemd_btrfs() {
-    clear
-
-    arch-chroot /mnt /usr/bin/bootctl --path=/boot install
-    cat <<EOF > /mnt/boot/loader/loader.conf
-default      arch.conf
-timeout      5
-editor       no
-console-mode auto
-EOF
-    cat /mnt/boot/loader/loader.conf
-
-    cat <<EOF > /mnt/boot/loader/entries/arch.conf
-title    Arch Linux
-linux    /vmlinuz-linux
-initrd   /intel-ucode.img
-initrd   /initramfs-linux.img
-options  root=/dev/sda2 rootfstype=btrfs rootflags=subvol=@ elevator=deadline add_efi_memmap rw quiet splash loglevel=3 vt.global_cursor_default=0 plymouth.ignore_serial_consoles vga=current rd.systemd.show_status=auto r.udev.log_priority=3 nowatchdog fbcon=nodefer i915.fastboot=1 i915.invert_brightness=1
-EOF
-    cat /mnt/boot/loader/entries/arch.conf
-
-    mkdir /mnt/etc/pacman.d/hooks/
-    touch /mnt/etc/pacman.d/hooks/100-systemd-boot.hook
-
-    cat <<EOF > /mnt/etc/pacman.d/hooks/100-systemd-boot.hook
-[Trigger]
-Type = Package
-Operation = Upgrade
-Target = systemd
-
-[Action]
-Description = Updating systemd-boot
-When = PostTransaction
-Exec = /usr/bin/bootctl update
-EOF
-    cat /mnt/etc/pacman.d/hooks/100-systemd-boot.hook
-
-}
-
 de_type() {
-	if [[ $DE == GNOME ]] || [[ $DE == 1 ]] || [[ $DE == gnome ]]; then
-		printf "\e[1;34m Selected Gnome \n\e[0m"
-		pacstrap /mnt base base-devel gnome vijay-gnome vijay-dotfiles vijay-wallpapers
-	elif [[ $DE == dwm ]] || [[ $DE == 2 ]] || [[ $DE == dwm ]]; then
+	if [[ $DE == Dwm ]] || [[ $DE == 1 ]]; then
 		printf "\e[1;34m Selected dwm \n\e[0m"
 		pacstrap /mnt base base-devel vijay-full-dwm vijay-dotfiles vijay-wallpapers
-	elif [[ $DE == i3 ]] || [[ $DE == 3 ]] || [[ $DE == i3wm ]]; then
+	elif [[ $DE == i3wm ]] || [[ $DE == 2 ]]; then
 		printf "\e[1;34m Selected i3wm \n\e[0m"
 		pacstrap /mnt base base-devel i3 vijay-i3 vijay-dotfiles vijay-wallpapers
-	elif [[ $DE == basic ]] || [[ $DE == 4 ]]; then
+	elif [[ $DE == basic ]] || [[ $DE == 3 ]]; then
 		printf "\e[1;34m Selected Base Install \n\e[0m"
 		pacstrap /mnt base vijay-base base-devel vijay-dotfiles
 		printf "\e[1;34m Basic installation completed \e[0m"
@@ -212,10 +170,9 @@ de_choose() {
     --title "Select Desktop type" \
     --cancel-label "Exit" \
     --menu "Please select:" $HEIGHT $WIDTH 4 \
-    "1" "Gnome" \
-    "2" "Dwm" \
-    "3" "i3wm" \
-    "4" "basic" \
+    "1" "Dwm" \
+    "2" "i3wm" \
+    "3" "basic" \
     2>&1 1>&3)
     exit_status=$?
   exec 3>&-
@@ -301,6 +258,7 @@ cd /home/vijay
 git clone "https://aur.archlinux.org/yay.git"
 cd /home/vijay/yay
 makepkg -si --noconfirm
+yay -Sy blesh
 EOF
 
 chmod +x /mnt/home/vijay/temp.sh
@@ -315,29 +273,18 @@ main() {
   filesystem_type
   de_type
   chroot_ex
-  if [[ $FS == EXT4 ]] || [[ $FS == 1 ]] || [[ $FS == ext4 ]]; then
-	  printf "\e[1;34m Selected EXT4 \n\e[0m"
-	  grub_ext4
-  elif [[ $FS == BTRFS ]] || [[ $FS == 2 ]] || [[ $FS == btrfs ]]; then
-	  printf "\e[1;34m Selected BTRFS \n\e[0m"
-	  systemd_btrfs
-  else
-	  printf "\e[1;34m Invalid option \e[0m"
-	  exit
-  fi
+  grub_ext4
   printf "\e[1;35m\n\next4 Installation completed \n\e[0m"
 }
 
 printf "\e[1;32m*********Arch Script Started**********\n\e[0m"
 
 echo "------------------------------------------------------------------------------"
-
 echo "     _     ____    ____  _   _   ___  _   _  ____  _____   _     _      _      "
 echo "    / \   |  _ \  / ___|| | | | |_ _|| \ | |/ ___||_   _| / \   | |    | |     "
 echo "   / _ \  | |_) || |    | |_| |  | | |  \| |\___ \  | |  / _ \  | |    | |     "
 echo "  / ___ \ |  _ < | |___ |  _  |  | | | |\  | ___) | | | / ___ \ | |___ | |___  "
 echo " /_/   \_\|_| \_\ \____||_| |_| |___||_| \_||____/  |_|/_/   \_\|_____||_____| "
-
 echo "-------------------------------------------------------------------------------"
 
 preinstall() {
@@ -353,8 +300,8 @@ SigLevel = DatabaseTrustedOnly
 SigLevel = Optional DatabaseOptional
 Server = https://gitlab.com/vijaysrv/vijay-repo/-/raw/main/x86_64
 EOF
-	pacman-key --recv-keys 93FD2B22ADBCAE64
-	pacman-key --lsign-key 93FD2B22ADBCAE64
+	pacman-key --recv-keys 5098EE07F4F9C091
+	pacman-key --lsign-key 5098EE07F4F9C091
 	pacman -Sy --noconfirm dialog pacman-contrib terminus-font reflector rsync
 	setfont ter-v22b
 	sed -i 's/^#Para/Para/' /etc/pacman.conf
