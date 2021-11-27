@@ -151,12 +151,12 @@ de_choose() {
 filesystem_choose() {
     PS3="Select filesystem type: "
 
-    select opt in dwm i3 basic quit; do
+    select opt in btrfs ext4 quit; do
         case $opt in
-            dwm)
+            btrfs)
                 FS="btrfs";
                 break;;
-            i3)
+            ext4)
                 FS="ext4";
                 break;;
             quit)
